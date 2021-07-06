@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[290]:
 
 
 # Author: Chase J. Shyu
 # Email: iamhemry@gmail.com
 # Created date: June 3rd, 2021
-# Updated date: June 29th, 2021
+# Updated date: July 2rd, 2021
 import datetime, math
 import numpy as np
 import pandas as pd
@@ -75,7 +75,7 @@ def gradient_fill(x, y, fill_color=None, palpha=1, ax=None, **kwargs):
     return line, patche
 
 
-# In[2]:
+# In[291]:
 
 
 def isEnglish(s):
@@ -128,13 +128,13 @@ def verticalizeText(text):
     return text_v
 
 
-# In[3]:
+# In[292]:
 
 
-#!python3 data_processing.py
+get_ipython().system('python3 data_processing.py')
 
 
-# In[4]:
+# In[293]:
 
 
 # 2021/04台灣人口 23,514,196
@@ -145,7 +145,7 @@ pop202104_cities = dict(zip(pop_cities.iloc[:,0].tolist(),pop_cities.iloc[:,1].t
 vaccine_prec = 0.65
 vacNumber = round(population_202104*vaccine_prec*2)
 first_date = datetime.datetime.fromisoformat('2021-03-01')
-last_date = datetime.datetime.today() + datetime.timedelta(days=1)
+last_date = datetime.datetime.today() + datetime.timedelta(days=0)
 dpi = 150
 
 # for read data
@@ -188,7 +188,7 @@ prog_ylim_ratio = 1.5
 prog_y_interval = 5
 vacc_y_interval = 1
 vacc_y_interval_minor = 0.5
-figsize = (18, 12)
+figsize = (24, 12)
 
 # for plot
 title = '臺灣COVID-19疫苗接種統計報表'
@@ -243,7 +243,7 @@ sub_lw = 1.5
 
 # infected dates
 dates_infected = ['2021-04-22','2021-04-29','2021-05-11','2021-05-12','2021-05-23',
-                  '2021-06-01','2021-06-23']
+                  '2021-06-01','2021-06-23','2021-07-02']
 
 # background zones
 alpha_level1 = 0.2
@@ -278,17 +278,19 @@ mpl.rcParams['legend.title_fontsize'] = legend_title_size
 #rc("pdf", fonttype=42)
 
 
-# In[5]:
+# In[313]:
 
 
 def plot_sub(ax_vac_num,combo=0):
     ax_progress = ax_vac_num.twinx()
     #await vaccion
-    df2 = df[df.index < last_date]
+    ax_vac_num.set_zorder(6)
+    ax_progress.set_zorder(7)
+    df2 = df[df.index < last_date + datetime.timedelta(days=-1)]
     dd = np.vstack((df2.index[:-1],df2.index[1:])).T.reshape((1,-1),)[0]
     yvalue = (df2[ArrivedAmount]-df2[VaccineCheck].fillna(0).cumsum()-df2[ReleasedVaccine])*1e-6
     aa = np.vstack((yvalue[:-1],yvalue[:-1])).T.reshape((1,-1),)[0]
-    #ax_vac_num.plot(dd,aa,'-',color=await_color,label=label_await,lw=1,zorder=5)
+#    ax_vac_num.plot(dd,aa,'-',color=await_color,label=label_await,lw=1,zorder=5)
     lim_y_max = ax_vac_num.get_ylim()[1]
     _, im_await = gradient_fill(mdates.date2num(dd),aa,await_color,ax=ax_vac_num,palpha=0.75,lw=1)
 
@@ -337,7 +339,7 @@ def plot_sub(ax_vac_num,combo=0):
             ax_progress.text(i,ycoord, text + '\n$\downarrow$ ',
                              zorder=6,rotation=0,fontsize=event_size,
                              horizontalalignment='center',color=progress_text_color,
-                             bbox={'facecolor':'white', 'edgecolor':'none', 'pad':2,'alpha':0.6})
+                             bbox={'facecolor':'white', 'edgecolor':'none', 'pad':1,'alpha':0.6})
 
     ax_progress.set_xlim(first_date,df.index[-1])
     ax_progress.set_ylim(0,ax_progress.get_ylim()[1]*prog_ylim_ratio)#prog_ylim_ratio)
@@ -380,29 +382,33 @@ def plot_sub(ax_vac_num,combo=0):
                     text_last_updated,
                    fontsize=tick_size-5,ha='right',va='bottom')
         ab = AnnotationBbox(OffsetImage(plt.imread("github.png"), zoom=.055),
-                            (0.797, -.1255), xycoords='axes fraction',box_alignment=(1,0),
+                            (0.83, -.1255), xycoords='axes fraction',box_alignment=(1,0),
                             pad=-3,bboxprops={'edgecolor':'none'})
         ax_progress.add_artist(ab)
         ax_progress.text(xmax,-ax_progress.get_ylim()[1]*0.11,text_sign,fontsize=tick_size-5,ha='right',va='bottom')
 
     
 def plot_class(ax_class,combo=0):
+    ax_class.set_zorder(9)
     df_class = pd.read_csv('injection_class.csv')
 
     ind = ['累計第' in c for c in df.columns]
-    cols = df.columns[ind][10:48:6]
-    orders = [0,1,2,3,4,5,6]
+    cols = df.columns[ind][10:60:6]
+    orders = [0,1,2,3,4,5,6,7,8]
 #    orders = [0,1,2,7,3,6,5]
     cols = cols[orders]
     col_label = ['#%d'%(i+1)+c[5:-3] for i, c in enumerate(cols)]
-    col_label[5] = col_label[5]+'&'+col_label[6][2:]
+    col_label[5] = col_label[5]+'\n&'+col_label[6][2:]
+    col_label[6] = '#7'+ col_label[7][2:]+'&'+col_label[8][2:]
     col_label = np.array(col_label)
-    class_selected = [0,1,2,4,5]
+    class_selected = [0,1,4,5,6]
     isNotNull = ~ df[cols[0]].isnull()
     ind_last = df[isNotNull].index[-1]
     #df[cols] = df[cols].interpolate()
     class_acc = df.loc[ind_last,cols].to_numpy()
-    class_acc[-2] += class_acc[-1]
+    class_acc[5] += class_acc[6]
+    class_acc[6] = class_acc[7] + class_acc[8]
+    class_acc = class_acc[:-2]
     class_pop = np.array(df_class['人數_0621'])[:7]
     class_name = np.array(df_class['類別'])[:7]
     class_ratio = class_acc/class_pop
@@ -437,9 +443,9 @@ def plot_class(ax_class,combo=0):
            color=outer_colors, edgecolor='w', linewidth=1, align="edge")
 
         
-    dx = [0,-np.pi/90,+np.pi/90,0,0]
-    yy = np.array([2.,1.7,2.29,1.9,1.8])*size
-    c = ['w','k','k','w','w']
+    dx = [0,-np.pi/90,+np.pi/90,+np.pi/45,0]
+    yy = np.array([2.,1.9,2.29,2.3,2.])*size
+    c = ['w','w','k','k','w']
     for i, x in enumerate(valsleft[:, 0]+ valsnorm.sum(axis=1)/2):
         xx = x + dx[i]
         msg = col_label[i] + '\n%.1f萬人'%(class_pop[i]*1e-4)
@@ -451,13 +457,14 @@ def plot_class(ax_class,combo=0):
            width=valsnorm.flatten(), bottom=1-size, height=size,
            color=inner_colors, edgecolor='w', linewidth=1, align="edge")
 
+    # outside
     for i, x in enumerate((valsleft.flatten()+ valsnorm.flatten()/2)[::2]):
-        if i == 3:
-            xx, yy = x*1.05, size*3.8
-        elif i == 1:
-            xx, yy = x*0.95, size*3.8
-        else:
-            xx, yy = x, size*4
+#        if i == 3:
+#            xx, yy = x*1.05, size*3.8
+#        elif i == 1:
+#            xx, yy = x*0.95, size*3.8
+#        else:
+        xx, yy = x, size*4
         ax_class.text(xx,yy,'%.2f'%(class_ratio[i]*100) + '%',ha='center',va='center',fontsize=10,
                      color=outer_colors[i])
 
@@ -482,7 +489,187 @@ def plot_class(ax_class,combo=0):
 
 
 
-# In[15]:
+# In[295]:
+
+
+def plot_background_color(ax):
+    # infected events
+    for d in dates_infected:
+        date0 = mdates.date2num(datetime.datetime.fromisoformat(d) - datetime.timedelta(hours=12))
+        date1 = mdates.date2num(datetime.datetime.fromisoformat(d) + datetime.timedelta(hours=12))
+        zone_alert = ax.axvspan(date0, date1 , facecolor=color_alert, alpha=alpha_alert,zorder=1)
+
+    # level zones
+    date0 = ax.get_xlim()[0]
+    date1 = mdates.date2num(datetime.datetime.fromisoformat('2021-05-11'))
+    zone_level1 = ax.axvspan(date0, date1 , facecolor=color_level1, alpha=alpha_level1,zorder=0)
+    date2 = mdates.date2num(datetime.datetime.fromisoformat('2021-05-19'))
+    zone_level2 = ax.axvspan(date1, date2 , facecolor=color_level2, alpha=alpha_level2,zorder=0)
+    date3 = ax.get_xlim()[1]
+    zone_level3 = ax.axvspan(date2, date3 , facecolor=color_level3, alpha=alpha_level3,zorder=0)
+
+    # vaccine events
+    ind = ~df[Event].isnull() & (df.index < (last_date + datetime.timedelta(days=-1)))
+    #date = df.loc[ind,Date]
+    for i in df[ind].index:
+        if '抵臺' in df.loc[i,Event]:
+            date0 = mdates.date2num(i - datetime.timedelta(hours=12))
+            date1 = mdates.date2num(i + datetime.timedelta(hours=12))
+            zone_vaccine = ax.axvspan(date0, date1 , facecolor=color_vaccine, alpha=alpha_vaccine,zorder=1)
+    date0 = mdates.date2num(datetime.datetime.fromisoformat('2021-06-10') - datetime.timedelta(hours=12))
+    date1 = mdates.date2num(datetime.datetime.fromisoformat('2021-06-10') + datetime.timedelta(hours=12))
+    zone_vaccine = ax.axvspan(date0, date1 , facecolor=color_vaccine, alpha=alpha_vaccine,zorder=1)
+
+    return zone_level1,zone_level2,zone_level3,zone_alert,zone_vaccine
+
+
+# In[296]:
+
+
+def plot_event(ax_event, combo=0):
+
+    event_ylim_ratio = 1.8
+    # plot vaccine injected amount
+    plot_vaccine_first(ax_event)
+
+    plot_vaccine_second(ax_event)
+
+    plot_event_text(ax_event)
+
+    zone_level1,zone_level2,zone_level3,zone_alert,zone_vaccine = plot_background_color(ax_event)
+
+    ax_event.set_ylim(0,ax_event.get_ylim()[1]*event_ylim_ratio)#prog_ylim_ratio)
+    ax_event.set_xlim(first_date,df.index[-1])
+
+    ax_event.set_yticks([])
+#    ax_event.set_yticks(np.arange(0, ax_event.get_ylim()[1]+.1, vacc_y_interval_minor), minor=True)
+    #ax_progress.set_zorder(0)
+#    ax_event.set_ylim(0,)#math.ceil(ax_vaccine.get_ylim()[1] * vac_ylim_times))
+#    ax_event.set_xlim(first_date,xmax)
+    ax_event.set_ylabel(verticalizeText('事件'), fontsize=label_size,va='center',rotation=0)
+    ax_event.yaxis.set_label_coords(-0.01,0.5)
+    ax_event.set_title('臺灣COVID-19相關事件',fontsize=title_size,y=1.02)
+    ax_event.text(xmax,ax_event.get_ylim()[1]*1.035,
+                    text_last_updated,
+                   fontsize=tick_size,ha='right',va='bottom')
+    
+    ab = AnnotationBbox(OffsetImage(plt.imread("github.png"), zoom=.08),
+                    (0.895, -.077), xycoords='axes fraction',box_alignment=(1,0),
+                    pad=-3,bboxprops={'edgecolor':'none'})
+    ax_event.add_artist(ab)
+    ax_event.text(xmax,-ax_event.get_ylim()[1]*0.065,text_sign,fontsize=tick_size,ha='right',va='bottom')
+
+    #ax_vaccine.spines['top'].set_visible(False)
+#    ax_event.spines['left'].set_visible(False)
+#    ax_event.spines['right'].set_color(vaccine_color)
+    for axis in ['top','bottom','left','right']:
+        ax_event.spines[axis].set_linewidth(2)
+#    ax_event.yaxis.label.set_color(vaccine_color)
+#    ax_event.tick_params(which='both',axis='y',colors=vaccine_color)
+    ax_event.xaxis.set_minor_locator(mdates.DayLocator())
+    ax_event.tick_params(which='major', length=10, width=2)
+    ax_event.tick_params(which='minor', length=5, width=2)
+
+
+    if combo == 0:
+        loc = 2
+        bbox_to_anchor=(0., 1.)
+
+        legend_background = ax_event.legend([zone_level1,zone_level2,zone_level3,zone_alert,zone_vaccine],
+                                          label_legend_background,fontsize=label_size,
+                                          loc=loc,bbox_to_anchor=bbox_to_anchor, ncol=2,
+                                          title=title_legend_background)
+        ax_event.add_artist(legend_background)
+
+
+# In[297]:
+
+
+def plot_vaccine_second(ax):
+    ind = (~df['累計第一劑_合計'].isnull())# & (df.index > datetime.datetime.fromisoformat('2021-06-20') )
+    ind = ind & (df.index < (last_date + datetime.timedelta(days=-2)) )
+    dd = df.index[ind]
+#    aa = df['累計第一劑_合計'][ind]/population_202104*100
+    aa2 = df['累計第二劑_合計'][ind]/population_202104*100
+    ax.plot(dd,aa2,'--',color='blue',lw=1.5,label='第二劑接種(%)')
+    ax.plot(dd[0],aa2[0],'o',color='blue')
+    ax.plot(dd[-1],aa2[-1],'o',color='blue')
+    
+    x =  mdates.date2num(dd[-1] - datetime.timedelta(hours=12))
+    msg = '%.2f'%aa2[-1] + '%'
+    y = aa2[-1] + ax.get_ylim()[1]*0.02
+    ax.text(x, y, msg,color='blue',ha='right',va='bottom',fontsize=16,
+                bbox={'facecolor':'white', 'edgecolor':'none','alpha':0.6,'pad':2})
+
+    
+def plot_vaccine_first(ax):
+
+    ind = (~df[InjectedAmountCorrect].isnull()) & (df.index < (last_date + datetime.timedelta(days=-1)))
+    ax.plot(df.index[ind], df[InjectedAmountCorrect][ind]/population_202104*100,
+                    '--',color=vaccine_color, linewidth = 2,label=label_taiwan_vac,zorder=10)
+
+    xx = mdates.date2num(df.index[ind][-1])
+    yy = df[InjectedAmountCorrect][ind][-1]/population_202104*100
+    ax.plot(xx,yy,'o',color=vaccine_color,ms=10,zorder=12,mew=0)
+    
+    xx = mdates.date2num(df.index[ind][-1] - datetime.timedelta(hours=12))
+    yy = df[InjectedAmountCorrect][ind][-1]/population_202104*100 * 1.01
+    msg = '%.2f'%yy + '%'
+    ax.text(xx,yy,msg,color=vaccine_color,ha='right',va='bottom',fontsize=16,zorder=12,
+                   bbox={'facecolor':'white', 'edgecolor':'none','alpha':0.6,'pad':2})
+
+
+def plot_event_text(ax,combo=0):
+    # text event information
+    y_shift = ax.get_ylim()[1]*0.05
+    ind = ~df[Event].isnull() & (df.index < (last_date + datetime.timedelta(days=-1)))
+    #date = df.loc[ind,Date]
+    for i in df[ind].index:
+        
+        if combo != 0 and mdates.date2num(i) == mdates.date2num(datetime.datetime.fromisoformat('2021-03-22')):
+            bbox={'facecolor':'white', 'edgecolor':'none', 'pad':1,'alpha':0.6}
+        else:
+            bbox={'facecolor':'none', 'edgecolor':'none'}
+
+        text_v = verticalizeText(df.loc[i,Event])
+
+        ycoord = df.loc[i,'mavg'] / population_202104*100
+        if text_v.count('\n') < 30:
+            if ycoord / ax.get_ylim()[1] <= 0.65 or combo == 0:
+                sign = 1
+                text = text_v + '\n$\downarrow$ '
+                va = 'bottom'
+            else:
+                sign = -1
+                text = r'$\uparrow$ ' + '\n' + text_v
+                va = 'top'
+            ax.text(i,ycoord + y_shift*sign, text, rotation=0,fontsize=event_size,
+                            horizontalalignment='center',zorder=11,va=va,bbox=bbox)
+        else:
+            strings = text_v.split('/')
+            
+            string1 = strings[0]
+            for t in strings[1:-1]:
+                string1 += '/' + t
+            string2 = strings[-1]
+
+            sign = 1
+            text = string1[:-1] + '\n$\downarrow$ '
+            va = 'bottom'
+            ax.text(i,ycoord + y_shift*sign, text, rotation=0,fontsize=event_size,
+                            horizontalalignment='center',zorder=11,va=va,bbox=bbox)
+
+            sign = -1
+            text = r'$\uparrow$ ' + '\n' + string2[1:]
+            va = 'top'
+            ax.text(i,ycoord + y_shift*sign, text, rotation=0,fontsize=event_size,
+                            horizontalalignment='center',zorder=11,va=va,bbox=bbox)
+            
+        ax.plot(df.index[ind], df.loc[ind,"mavg"]/population_202104*100 ,'o',
+                        color='black',zorder=11,ms=6,mew=0)
+
+
+# In[298]:
 
 
 def plot_covid(ax_covid):
@@ -494,7 +681,7 @@ def plot_covid(ax_covid):
 
     for i in df[df[DeathDaily]>0].index:
         ax_covid.text(i,df.loc[i,DeathDaily],'%d'%df.loc[i,DeathDaily],color='red',va='bottom',ha='center',
-                     fontsize=10,zorder=11)
+                     fontsize=10-2,zorder=11)
     
     ax_covid.set_ylim(0,covid_ylim_max)
     ax_covid.set_ylabel(verticalizeText(label_right), fontsize=label_size,rotation=0,va='center')
@@ -514,45 +701,10 @@ def plot_covid(ax_covid):
     ax_covid.grid(which='major', axis='y',linestyle = '--', linewidth = 1.5,zorder=0,color='darkgray')
     #ax_covid.grid(which='minor', axis='y',linestyle = '--', linewidth = 1,zorder=0,color='darkgray')
 
-def plot_vaccine(ax_vaccine):
+def plot_vaccine(ax_vaccine,combo):
     # plot vaccine injected amount
-    ind = (~df[InjectedAmountCorrect].isnull()) & (df.index < (last_date + datetime.timedelta(days=-1)))
-    ax_vaccine.plot(df.index[ind], df[InjectedAmountCorrect][ind]/population_202104*100,
-                    '--',color=vaccine_color, linewidth = 2,label=label_taiwan_vac,zorder=10)
-    
-    if True:
-        ind = (~df['累計第一劑_合計'].isnull())# & (df.index > datetime.datetime.fromisoformat('2021-06-20') )
-        ind = ind & (df.index < (last_date + datetime.timedelta(days=-2)) )
-        dd = df.index[ind]
-        aa = df['累計第一劑_合計'][ind]/population_202104*100
-        aa2 = df['累計第二劑_合計'][ind]/population_202104*100
-#        ax_vaccine.fill_between(mdates.date2num(dd), aa, aa+aa2,facecolor='skyblue',alpha=0.4)
-        ax_vaccine.plot(dd,aa2,'--',color='blue',lw=1.5,label='第二劑接種(%)')
-        ax_vaccine.plot(dd[0],aa2[0],'o',color='blue')
-        ax_vaccine.plot(dd[-1],aa2[-1],'o',color='blue')
-        
-        x =  mdates.date2num(dd[-1] - datetime.timedelta(hours=12))
-        msg = '%.2f'%aa2[-1] + '%'
-        y = aa2[-1] + ax_vaccine.get_ylim()[1]*0.02
-        ax_vaccine.text(x, y, msg,color='blue',ha='right',va='bottom',fontsize=16,
-                   bbox={'facecolor':'white', 'edgecolor':'none','alpha':0.6,'pad':2})
-
-
-
-    
-#        ax_vaccine.plot(dd,aa/population_202104*100,
-#                        '--',color='skyblue',lw=1.5,label='第二劑',zorder=10)
-
-
-    xx = mdates.date2num(df.index[ind][-1])
-    yy = df[InjectedAmountCorrect][ind][-1]/population_202104*100
-    ax_vaccine.plot(xx,yy,'o',color=vaccine_color,ms=10,zorder=12,mew=0)
-    
-    xx = mdates.date2num(df.index[ind][-1] - datetime.timedelta(hours=12))
-    yy = df[InjectedAmountCorrect][ind][-1]/population_202104*100 * 1.01
-    msg = '%.2f'%yy + '%'
-    ax_vaccine.text(xx,yy,msg,color=vaccine_color,ha='right',va='bottom',fontsize=16,zorder=12,
-                   bbox={'facecolor':'white', 'edgecolor':'none','alpha':0.6,'pad':2})
+    plot_vaccine_first(ax_vaccine)
+    plot_vaccine_second(ax_vaccine)
 
     # plot cities
     cities = list(pop202104_cities.keys())
@@ -576,27 +728,6 @@ def plot_vaccine(ax_vaccine):
         ax_vaccine.plot(df.index[ind][-1],yy[-1],'o',mew=0,ms=5,
                         zorder=2,mfc=color_city_marker)
 
-    # text event information
-    y_shift = ax_vaccine.get_ylim()[1]*0.05
-    ind = ~df[Event].isnull() & (df.index < (last_date + datetime.timedelta(days=-1)))
-    #date = df.loc[ind,Date]
-    for i in df[ind].index:
-        
-        text_v = verticalizeText(df.loc[i,Event])        
-        ycoord = df.loc[i,'mavg'] / population_202104*100
-        if ycoord / ax_vaccine.get_ylim()[1] <= 0.65:
-            sign = 1
-            text = text_v + '\n$\downarrow$ '
-            va = 'bottom'
-        else:
-            sign = -1
-            text = r'$\uparrow$ ' + '\n' + text_v
-            va = 'top'
-        ax_vaccine.text(i,ycoord + y_shift*sign, text, rotation=0,fontsize=event_size,
-                        horizontalalignment='center',zorder=11,va=va)
-        ax_vaccine.plot(df.index[ind], df.loc[ind,"mavg"]/population_202104*100 ,'o',
-                        color='black',zorder=11,ms=6,mew=0)
-
     ax_vaccine.set_yticks(np.arange(0, ax_vaccine.get_ylim()[1]+.1, vacc_y_interval))
     ax_vaccine.set_yticks(np.arange(0, ax_vaccine.get_ylim()[1]+.1, vacc_y_interval_minor), minor=True)
     #ax_progress.set_zorder(0)
@@ -604,13 +735,13 @@ def plot_vaccine(ax_vaccine):
     ax_vaccine.set_xlim(first_date,xmax)
     ax_vaccine.set_ylabel(verticalizeText(label_left), fontsize=label_size,va='center',rotation=0)
     ax_vaccine.yaxis.set_label_coords(1.03,0.5)
-    ax_vaccine.set_title(title,fontsize=title_size,y=1.05)
-    ax_vaccine.text(xmax,ax_vaccine.get_ylim()[1]*1.065,
+    ax_vaccine.set_title(title,fontsize=title_size,y=1.02)
+    ax_vaccine.text(xmax,ax_vaccine.get_ylim()[1]*1.035,
                     text_last_updated,
                    fontsize=tick_size,ha='right',va='bottom')
     
     ab = AnnotationBbox(OffsetImage(plt.imread("github.png"), zoom=.08),
-                    (0.86, -.077), xycoords='axes fraction',box_alignment=(1,0),
+                    (0.895, -.077), xycoords='axes fraction',box_alignment=(1,0),
                     pad=-3,bboxprops={'edgecolor':'none'})
     ax_vaccine.add_artist(ab)
     ax_vaccine.text(xmax,-ax_vaccine.get_ylim()[1]*0.065,text_sign,fontsize=tick_size,ha='right',va='bottom')
@@ -629,42 +760,23 @@ def plot_vaccine(ax_vaccine):
 def plot_main(ax_covid,combo=0):
     ax_vaccine = ax_covid.twinx()
     plot_covid(ax_covid)
-    plot_vaccine(ax_vaccine)
+    plot_vaccine(ax_vaccine,combo)
+    plot_event_text(ax_vaccine,combo=1)
+
+    ax_covid.set_zorder(5)
+    ax_vaccine.set_zorder(10)
+
     
-    # infected events
-    for d in dates_infected:
-        date0 = mdates.date2num(datetime.datetime.fromisoformat(d) - datetime.timedelta(hours=12))
-        date1 = mdates.date2num(datetime.datetime.fromisoformat(d) + datetime.timedelta(hours=12))
-        zone_alert = ax_covid.axvspan(date0, date1 , facecolor=color_alert, alpha=alpha_alert,zorder=1)
+    zone_level1,zone_level2,zone_level3,zone_alert,zone_vaccine = plot_background_color(ax_covid)
 
-    # level zones
-    date0 = ax_covid.get_xlim()[0]
-    date1 = mdates.date2num(datetime.datetime.fromisoformat('2021-05-11'))
-    zone_level1 = ax_covid.axvspan(date0, date1 , facecolor=color_level1, alpha=alpha_level1,zorder=0)
-    date2 = mdates.date2num(datetime.datetime.fromisoformat('2021-05-19'))
-    zone_level2 = ax_covid.axvspan(date1, date2 , facecolor=color_level2, alpha=alpha_level2,zorder=0)
-    date3 = ax_covid.get_xlim()[1]
-    zone_level3 = ax_covid.axvspan(date2, date3 , facecolor=color_level3, alpha=alpha_level3,zorder=0)
-
-    # vaccine events
-    ind = ~df[Event].isnull() & (df.index < (last_date + datetime.timedelta(days=-1)))
-    #date = df.loc[ind,Date]
-    for i in df[ind].index:
-        if '抵臺' in df.loc[i,Event]:
-            date0 = mdates.date2num(i - datetime.timedelta(hours=12))
-            date1 = mdates.date2num(i + datetime.timedelta(hours=12))
-            zone_vaccine = ax_covid.axvspan(date0, date1 , facecolor=color_vaccine, alpha=alpha_vaccine,zorder=1)
-    date0 = mdates.date2num(datetime.datetime.fromisoformat('2021-06-10') - datetime.timedelta(hours=12))
-    date1 = mdates.date2num(datetime.datetime.fromisoformat('2021-06-10') + datetime.timedelta(hours=12))
-    zone_vaccine = ax_covid.axvspan(date0, date1 , facecolor=color_vaccine, alpha=alpha_vaccine,zorder=1)
 
     # plot legend
-    if combo != 0:
-        loc = 1
-        bbox_to_anchor=(0.82, 0.985)
-    else:
-        loc = 2
-        bbox_to_anchor=(0.24, 1.)
+#    if combo != 0:
+    loc = 1
+    bbox_to_anchor=(0.75, 0.985)
+#    else:
+#        loc = 2
+#        bbox_to_anchor=(0.20, 1.)
         
     hs0, ls0 = ax_vaccine.get_legend_handles_labels()
     hs1, ls1 = ax_covid.get_legend_handles_labels()
@@ -679,7 +791,7 @@ def plot_main(ax_covid,combo=0):
         bbox_to_anchor=(0.02, 0.2)
     else:
         loc = 2
-        bbox_to_anchor=(0., 1.)
+        bbox_to_anchor=(0.008, 0.985)
 
     legend_background = ax_vaccine.legend([zone_level1,zone_level2,zone_level3,zone_alert,zone_vaccine],
                                           label_legend_background,fontsize=label_size,
@@ -688,20 +800,20 @@ def plot_main(ax_covid,combo=0):
     ax_vaccine.add_artist(legend_background)
 
 
-# In[16]:
+# In[299]:
 
 
 fig, ax_covid = plt.subplots(1,1,figsize=figsize,dpi=dpi)
 plot_main(ax_covid,combo=1)
 
-sub_size = [0.45, 0.45]
+sub_size = [0.4, 0.45]
 # plot vaccine progress
-ax_vac_num = fig.add_axes([0.09, 0.42, sub_size[0], sub_size[1]])
+ax_vac_num = fig.add_axes([0.085, 0.44, sub_size[0], sub_size[1]])
 plot_sub(ax_vac_num,combo=1)
 
 # plot class
 class_size = [0.24, 0.24]
-ax_class = fig.add_axes([0.245, 0.60, class_size[0], class_size[1]],polar=True)
+ax_class = fig.add_axes([0.185, 0.6, class_size[0], class_size[1]],polar=True)
 plot_class(ax_class,combo=1)
 
 # save figure
@@ -717,7 +829,7 @@ plt.close()
 # https://www.twblogs.net/a/5ee7eacdb4042e940f40f7c3
 
 
-# In[17]:
+# In[300]:
 
 
 fig, ax = plt.subplots(1,1,figsize=figsize,dpi=dpi)
@@ -730,7 +842,7 @@ plt.show()
 plt.close()
 
 
-# In[18]:
+# In[301]:
 
 
 sub_figsize = tuple(np.array(figsize) * np.array(sub_size) * 1.2)
@@ -743,7 +855,7 @@ plt.show()
 plt.close()
 
 
-# In[19]:
+# In[312]:
 
 
 class_figsize = tuple(np.array(figsize) * np.array(class_size) * 1.2)
@@ -756,7 +868,24 @@ plt.show()
 plt.close()
 
 
-# In[45]:
+# In[303]:
+
+
+size_event = [1., 1.]
+
+figsize_event = (24, 12) # 18
+figsize_event = tuple( np.array(figsize_event) * np.array(size_event) )
+fig, ax = plt.subplots(1,1,figsize=figsize_event,dpi=dpi/size_event[0])
+
+plot_event(ax)
+
+plt.tight_layout()
+plt.savefig('ax_event-%s.jpg'%df.index[-2].strftime('%Y-%m-%d'),dpi=dpi/size_event[0])
+plt.show()
+plt.close()
+
+
+# In[304]:
 
 
 # convert to .py

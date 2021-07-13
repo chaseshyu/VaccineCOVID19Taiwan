@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[290]:
+# In[160]:
 
 
 # Author: Chase J. Shyu
@@ -75,7 +75,7 @@ def gradient_fill(x, y, fill_color=None, palpha=1, ax=None, **kwargs):
     return line, patche
 
 
-# In[291]:
+# In[161]:
 
 
 def isEnglish(s):
@@ -128,13 +128,13 @@ def verticalizeText(text):
     return text_v
 
 
-# In[292]:
+# In[162]:
 
 
-get_ipython().system('python3 data_processing.py')
+get_ipython().system('python3 data_processing.py > tmp.txt')
 
 
-# In[293]:
+# In[163]:
 
 
 # 2021/04台灣人口 23,514,196
@@ -185,9 +185,9 @@ covid_y_interval_minor = 100
 vac_ylim_times = 1
 vacc_ylim_max = 1450
 prog_ylim_ratio = 1.5
-prog_y_interval = 5
-vacc_y_interval = 1
-vacc_y_interval_minor = 0.5
+prog_y_interval = 10
+vacc_y_interval = 5
+vacc_y_interval_minor = 1
 figsize = (24, 12)
 
 # for plot
@@ -243,7 +243,7 @@ sub_lw = 1.5
 
 # infected dates
 dates_infected = ['2021-04-22','2021-04-29','2021-05-11','2021-05-12','2021-05-23',
-                  '2021-06-01','2021-06-23','2021-07-02']
+                  '2021-06-01','2021-06-23','2021-07-02','2021-07-13']
 
 # background zones
 alpha_level1 = 0.2
@@ -278,7 +278,7 @@ mpl.rcParams['legend.title_fontsize'] = legend_title_size
 #rc("pdf", fonttype=42)
 
 
-# In[313]:
+# In[181]:
 
 
 def plot_sub(ax_vac_num,combo=0):
@@ -330,16 +330,24 @@ def plot_sub(ax_vac_num,combo=0):
     ax_progress.plot(dd,aa / (population_202104*vaccine_prec*2) * 100,'--',
                      color=progress_text_color,label=label_progress,lw=2,zorder=5)
 
+    dx_shift = [0,0,0,0,0,-2,0,0,-2,0,0,0,0,0,0,0,0,0,]
+    iarrive = 0
     y_shift = ax_progress.get_ylim()[1]*0.02
     ind = ~df[Event].isnull() & (df.index < (last_date + datetime.timedelta(days=-1)))
     for i in df[ind].index:
         if '抵臺' in df.loc[i,Event]:
+            if dx_shift[iarrive] == 0:
+                arrow_text = '\n$\downarrow$ '
+            else:
+                arrow_text = '\n$\searrow$ '
+            xcoord = mdates.date2num(i + datetime.timedelta(days=dx_shift[iarrive]))
             ycoord = df.loc[i,ArrivedAmount] / (population_202104*vaccine_prec*2) * 100 + y_shift
             text = verticalizeText(df.loc[i,Event].split('/')[0])
-            ax_progress.text(i,ycoord, text + '\n$\downarrow$ ',
+            ax_progress.text(xcoord,ycoord, text + arrow_text,
                              zorder=6,rotation=0,fontsize=event_size,
                              horizontalalignment='center',color=progress_text_color,
                              bbox={'facecolor':'white', 'edgecolor':'none', 'pad':1,'alpha':0.6})
+            iarrive += 1
 
     ax_progress.set_xlim(first_date,df.index[-1])
     ax_progress.set_ylim(0,ax_progress.get_ylim()[1]*prog_ylim_ratio)#prog_ylim_ratio)
@@ -393,24 +401,26 @@ def plot_class(ax_class,combo=0):
     df_class = pd.read_csv('injection_class.csv')
 
     ind = ['累計第' in c for c in df.columns]
-    cols = df.columns[ind][10:60:6]
-    orders = [0,1,2,3,4,5,6,7,8]
+    cols = df.columns[ind][10:66:6]
+    orders = [0,1,2,3,4,5,6,7,8,9]
 #    orders = [0,1,2,7,3,6,5]
     cols = cols[orders]
     col_label = ['#%d'%(i+1)+c[5:-3] for i, c in enumerate(cols)]
     col_label[5] = col_label[5]+'\n&'+col_label[6][2:]
     col_label[6] = '#7'+ col_label[7][2:]+'&'+col_label[8][2:]
-    col_label = np.array(col_label)
-    class_selected = [0,1,4,5,6]
+    col_label[7] = '#8 '+col_label[9][3:]
+    col_label = np.array(col_label[:-2])
+    class_selected = [0,4,5,6,7]
     isNotNull = ~ df[cols[0]].isnull()
     ind_last = df[isNotNull].index[-1]
     #df[cols] = df[cols].interpolate()
     class_acc = df.loc[ind_last,cols].to_numpy()
     class_acc[5] += class_acc[6]
     class_acc[6] = class_acc[7] + class_acc[8]
+    class_acc[7] = class_acc[9]
     class_acc = class_acc[:-2]
-    class_pop = np.array(df_class['人數_0621'])[:7]
-    class_name = np.array(df_class['類別'])[:7]
+    class_pop = np.array(df_class['人數_0621'])[:8]
+    class_name = np.array(df_class['類別'])[:8]
     class_ratio = class_acc/class_pop
     class_remnant = class_pop - class_acc
     class_remnant[class_remnant < 0] = 0
@@ -444,7 +454,7 @@ def plot_class(ax_class,combo=0):
 
         
     dx = [0,-np.pi/90,+np.pi/90,+np.pi/45,0]
-    yy = np.array([2.,1.9,2.29,2.3,2.])*size
+    yy = np.array([2.,1.9,2.29,2.3,1.8])*size
     c = ['w','w','k','k','w']
     for i, x in enumerate(valsleft[:, 0]+ valsnorm.sum(axis=1)/2):
         xx = x + dx[i]
@@ -489,7 +499,7 @@ def plot_class(ax_class,combo=0):
 
 
 
-# In[295]:
+# In[165]:
 
 
 def plot_background_color(ax):
@@ -523,7 +533,7 @@ def plot_background_color(ax):
     return zone_level1,zone_level2,zone_level3,zone_alert,zone_vaccine
 
 
-# In[296]:
+# In[166]:
 
 
 def plot_event(ax_event, combo=0):
@@ -582,14 +592,14 @@ def plot_event(ax_event, combo=0):
         ax_event.add_artist(legend_background)
 
 
-# In[297]:
+# In[167]:
 
 
 def plot_vaccine_second(ax):
     ind = (~df['累計第一劑_合計'].isnull())# & (df.index > datetime.datetime.fromisoformat('2021-06-20') )
     ind = ind & (df.index < (last_date + datetime.timedelta(days=-2)) )
     dd = df.index[ind]
-#    aa = df['累計第一劑_合計'][ind]/population_202104*100
+ #    aa = df['累計第一劑_合計'][ind]/population_202104*100
     aa2 = df['累計第二劑_合計'][ind]/population_202104*100
     ax.plot(dd,aa2,'--',color='blue',lw=1.5,label='第二劑接種(%)')
     ax.plot(dd[0],aa2[0],'o',color='blue')
@@ -635,7 +645,7 @@ def plot_event_text(ax,combo=0):
 
         ycoord = df.loc[i,'mavg'] / population_202104*100
         if text_v.count('\n') < 30:
-            if ycoord / ax.get_ylim()[1] <= 0.65 or combo == 0:
+            if ycoord / ax.get_ylim()[1] <= 0.55 or combo == 0:
                 sign = 1
                 text = text_v + '\n$\downarrow$ '
                 va = 'bottom'
@@ -669,7 +679,7 @@ def plot_event_text(ax,combo=0):
                         color='black',zorder=11,ms=6,mew=0)
 
 
-# In[298]:
+# In[168]:
 
 
 def plot_covid(ax_covid):
@@ -685,7 +695,7 @@ def plot_covid(ax_covid):
     
     ax_covid.set_ylim(0,covid_ylim_max)
     ax_covid.set_ylabel(verticalizeText(label_right), fontsize=label_size,rotation=0,va='center')
-    ax_covid.yaxis.set_label_coords(-0.04,0.5)
+    ax_covid.yaxis.set_label_coords(-0.03,0.5)
     ax_covid.set_xlabel(label_bottom, fontsize=label_size)
     ax_covid.spines['left'].set_color(death_color)
     ax_covid.spines['right'].set_visible(False)
@@ -800,7 +810,7 @@ def plot_main(ax_covid,combo=0):
     ax_vaccine.add_artist(legend_background)
 
 
-# In[299]:
+# In[169]:
 
 
 fig, ax_covid = plt.subplots(1,1,figsize=figsize,dpi=dpi)
@@ -813,7 +823,7 @@ plot_sub(ax_vac_num,combo=1)
 
 # plot class
 class_size = [0.24, 0.24]
-ax_class = fig.add_axes([0.185, 0.6, class_size[0], class_size[1]],polar=True)
+ax_class = fig.add_axes([0.18, 0.6, class_size[0], class_size[1]],polar=True)
 plot_class(ax_class,combo=1)
 
 # save figure
@@ -829,7 +839,7 @@ plt.close()
 # https://www.twblogs.net/a/5ee7eacdb4042e940f40f7c3
 
 
-# In[300]:
+# In[170]:
 
 
 fig, ax = plt.subplots(1,1,figsize=figsize,dpi=dpi)
@@ -842,7 +852,7 @@ plt.show()
 plt.close()
 
 
-# In[301]:
+# In[171]:
 
 
 sub_figsize = tuple(np.array(figsize) * np.array(sub_size) * 1.2)
@@ -855,7 +865,7 @@ plt.show()
 plt.close()
 
 
-# In[312]:
+# In[182]:
 
 
 class_figsize = tuple(np.array(figsize) * np.array(class_size) * 1.2)
@@ -868,7 +878,7 @@ plt.show()
 plt.close()
 
 
-# In[303]:
+# In[173]:
 
 
 size_event = [1., 1.]
@@ -885,11 +895,53 @@ plt.show()
 plt.close()
 
 
-# In[304]:
+# In[174]:
 
 
 # convert to .py
 get_ipython().system('jupyter nbconvert --to script plotVaccineCOVID19Taiwan.ipynb')
+
+
+# https://covid-19.nchc.org.tw/api.php?tableID=2001
+# 
+# 表單: 各縣市疫苗接種率
+# 
+# 欄位說明
+# {"id":"ID","a01":"日期","a02":"縣市別","a03":"(A) 總人口數","a04":"新增接種人次","a05":"(B) 累計接種人次","a06":"(B\/A) 疫苗覆蓋率 (%)","a07":"(C) 累計配送量 (劑)","a08":"(C-B) 預估剩餘量 (劑)","a09":"(C-B\/C) 預估剩餘量 (%)","a10":"AZ新增接種人次","a11":"AZ累計接種人次","a12":"AZ疫苗覆蓋率 (%)","a13":"AZ累計配送量 (劑)","a14":"AZ預估剩餘量 (劑)","a15":"AZ預估剩餘量 (%)","a16":"Moderna新增接種人次","a17":"Moderna累計接種人次","a18":"Moderna疫苗覆蓋率 (%)","a19":"Moderna累計配送量 (劑)","a20":"Moderna預估剩餘量 (劑)","a21":"Moderna預估剩餘量 (%)"}
+# 
+# 下載方法 [GET method]
+# https://covid-19.nchc.org.tw/api/covid19?CK=covid-19@nchc.org.tw&querydata=2001
+# 
+# 下載方法 [POST method]
+# curl -k -d '{"CK":"covid-19@nchc.org.tw", "querydata":"2001"}' -H "Content-Type: application/json" -X POST https://covid-19.nchc.org.tw/api/covid19
+
+# In[175]:
+
+
+dict_info = {"id":"ID","a01":"日期","a02":"縣市別","a03":"(A) 總人口數","a04":"新增接種人次","a05":"(B) 累計接種人次","a06":"(B\/A) 疫苗覆蓋率 (%)",
+             "a07":"(C) 累計配送量 (劑)","a08":"(C-B) 預估剩餘量 (劑)","a09":"(C-B\/C) 預估剩餘量 (%)","a10":"AZ新增接種人次","a11":"AZ累計接種人次",
+             "a12":"AZ疫苗覆蓋率 (%)","a13":"AZ累計配送量 (劑)","a14":"AZ預估剩餘量 (劑)","a15":"AZ預估剩餘量 (%)","a16":"Moderna新增接種人次",
+             "a17":"Moderna累計接種人次","a18":"Moderna疫苗覆蓋率 (%)","a19":"Moderna累計配送量 (劑)","a20":"Moderna預估剩餘量 (劑)",
+             "a21":"Moderna預估剩餘量 (%)"}
+
+cmd = 'curl -k -d \'{"CK":"covid-19@nchc.org.tw", "querydata":"2001"}\' -H "Content-Type: application/json" -X POST https://covid-19.nchc.org.tw/api/covid19'
+import os, json
+result = os.popen(cmd).read()
+
+
+# In[176]:
+
+
+data = json.loads(result)
+data[0]
+for k in data[0].keys():
+    print(dict_info[k],data[500][k])
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:

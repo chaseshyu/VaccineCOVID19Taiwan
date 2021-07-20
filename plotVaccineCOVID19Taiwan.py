@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[160]:
+# In[290]:
 
 
 # Author: Chase J. Shyu
 # Email: iamhemry@gmail.com
 # Created date: June 3rd, 2021
-# Updated date: July 2rd, 2021
+# Updated date: July 20th, 2021
 import datetime, math
 import numpy as np
 import pandas as pd
@@ -75,7 +75,7 @@ def gradient_fill(x, y, fill_color=None, palpha=1, ax=None, **kwargs):
     return line, patche
 
 
-# In[161]:
+# In[291]:
 
 
 def isEnglish(s):
@@ -128,13 +128,13 @@ def verticalizeText(text):
     return text_v
 
 
-# In[162]:
+# In[292]:
 
 
-get_ipython().system('python3 data_processing.py > tmp.txt')
+#!python3 data_processing.py > tmp.txt
 
 
-# In[163]:
+# In[293]:
 
 
 # 2021/04台灣人口 23,514,196
@@ -145,8 +145,8 @@ pop202104_cities = dict(zip(pop_cities.iloc[:,0].tolist(),pop_cities.iloc[:,1].t
 vaccine_prec = 0.65
 vacNumber = round(population_202104*vaccine_prec*2)
 first_date = datetime.datetime.fromisoformat('2021-03-01')
-last_date = datetime.datetime.today() + datetime.timedelta(days=0)
-dpi = 150
+last_date = datetime.datetime.today() + datetime.timedelta(days=1)
+dpi = 200
 
 # for read data
 # data all from CDC
@@ -182,9 +182,9 @@ df['mavg'] = df[InjectedAmountCorrect].interpolate()
 covid_ylim_max = 800
 covid_y_interval = 200
 covid_y_interval_minor = 100
-vac_ylim_times = 1
+vac_ylim_times = 0.5
 vacc_ylim_max = 1450
-prog_ylim_ratio = 1.5
+prog_ylim_ratio = 1.35
 prog_y_interval = 10
 vacc_y_interval = 5
 vacc_y_interval_minor = 1
@@ -244,7 +244,7 @@ sub_lw = 1.5
 # infected dates
 dates_infected = ['2021-04-22','2021-04-29','2021-05-11','2021-05-12','2021-05-23',
                   '2021-06-01','2021-06-23','2021-07-02','2021-07-13']
-
+dates_vaccine = ['2021-06-10','2021-07-19']
 # background zones
 alpha_level1 = 0.2
 color_level1 = 'lightgreen'
@@ -278,7 +278,7 @@ mpl.rcParams['legend.title_fontsize'] = legend_title_size
 #rc("pdf", fonttype=42)
 
 
-# In[181]:
+# In[294]:
 
 
 def plot_sub(ax_vac_num,combo=0):
@@ -330,23 +330,47 @@ def plot_sub(ax_vac_num,combo=0):
     ax_progress.plot(dd,aa / (population_202104*vaccine_prec*2) * 100,'--',
                      color=progress_text_color,label=label_progress,lw=2,zorder=5)
 
-    dx_shift = [0,0,0,0,0,-2,0,0,-2,0,0,0,0,0,0,0,0,0,]
+    dx_shift = [0,0,0,0,0,-2,0,0,-2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     iarrive = 0
     y_shift = ax_progress.get_ylim()[1]*0.02
     ind = ~df[Event].isnull() & (df.index < (last_date + datetime.timedelta(days=-1)))
     for i in df[ind].index:
         if '抵臺' in df.loc[i,Event]:
+            t = df.loc[i,Event].split('/')[0]
             if dx_shift[iarrive] == 0:
                 arrow_text = '\n$\downarrow$ '
             else:
                 arrow_text = '\n$\searrow$ '
-            xcoord = mdates.date2num(i + datetime.timedelta(days=dx_shift[iarrive]))
-            ycoord = df.loc[i,ArrivedAmount] / (population_202104*vaccine_prec*2) * 100 + y_shift
-            text = verticalizeText(df.loc[i,Event].split('/')[0])
-            ax_progress.text(xcoord,ycoord, text + arrow_text,
-                             zorder=6,rotation=0,fontsize=event_size,
-                             horizontalalignment='center',color=progress_text_color,
-                             bbox={'facecolor':'white', 'edgecolor':'none', 'pad':1,'alpha':0.6})
+
+            if '、' in t:
+                ars = t.split('、')
+                text1 = ars[0]
+                text2 = ars[1]
+                for tt in ars[2:]:
+                    text2 += '、' + tt
+                text1 = verticalizeText(text1) + '\n$\downarrow$ '
+                text2 = r'$\uparrow$ '+'\n'+verticalizeText(text2)
+
+                xcoord = mdates.date2num(i + datetime.timedelta(days=dx_shift[iarrive]))
+                ycoord1 = df.loc[i,ArrivedAmount] / (population_202104*vaccine_prec*2) * 100 + y_shift
+                ycoord2 = df.loc[i,ArrivedAmount] / (population_202104*vaccine_prec*2) * 100 - y_shift*10.5
+                ax_progress.text(xcoord,ycoord1, text1,
+                                zorder=6,rotation=0,fontsize=event_size,
+                                horizontalalignment='center',color=progress_text_color,
+                                bbox={'facecolor':'white', 'edgecolor':'none', 'pad':1,'alpha':0.4})
+                ax_progress.text(xcoord,ycoord2, text2,
+                                zorder=6,rotation=0,fontsize=event_size,va='top',
+                                horizontalalignment='center',color=progress_text_color,
+                                bbox={'facecolor':'white', 'edgecolor':'none', 'pad':1,'alpha':0.4})
+
+            else:
+                xcoord = mdates.date2num(i + datetime.timedelta(days=dx_shift[iarrive]))
+                ycoord = df.loc[i,ArrivedAmount] / (population_202104*vaccine_prec*2) * 100 + y_shift
+                text = verticalizeText(df.loc[i,Event].split('/')[0])
+                ax_progress.text(xcoord,ycoord, text + arrow_text,
+                                zorder=6,rotation=0,fontsize=event_size,
+                                horizontalalignment='center',color=progress_text_color,
+                                bbox={'facecolor':'white', 'edgecolor':'none', 'pad':1,'alpha':0.4})
             iarrive += 1
 
     ax_progress.set_xlim(first_date,df.index[-1])
@@ -499,7 +523,7 @@ def plot_class(ax_class,combo=0):
 
 
 
-# In[165]:
+# In[295]:
 
 
 def plot_background_color(ax):
@@ -526,14 +550,15 @@ def plot_background_color(ax):
             date0 = mdates.date2num(i - datetime.timedelta(hours=12))
             date1 = mdates.date2num(i + datetime.timedelta(hours=12))
             zone_vaccine = ax.axvspan(date0, date1 , facecolor=color_vaccine, alpha=alpha_vaccine,zorder=1)
-    date0 = mdates.date2num(datetime.datetime.fromisoformat('2021-06-10') - datetime.timedelta(hours=12))
-    date1 = mdates.date2num(datetime.datetime.fromisoformat('2021-06-10') + datetime.timedelta(hours=12))
-    zone_vaccine = ax.axvspan(date0, date1 , facecolor=color_vaccine, alpha=alpha_vaccine,zorder=1)
-
+    for d in dates_vaccine:
+        date0 = mdates.date2num(datetime.datetime.fromisoformat(d) - datetime.timedelta(hours=12))
+        date1 = mdates.date2num(datetime.datetime.fromisoformat(d) + datetime.timedelta(hours=12))
+        zone_vaccine = ax.axvspan(date0, date1 , facecolor=color_vaccine, alpha=alpha_vaccine,zorder=1)
+    
     return zone_level1,zone_level2,zone_level3,zone_alert,zone_vaccine
 
 
-# In[166]:
+# In[296]:
 
 
 def plot_event(ax_event, combo=0):
@@ -592,7 +617,7 @@ def plot_event(ax_event, combo=0):
         ax_event.add_artist(legend_background)
 
 
-# In[167]:
+# In[297]:
 
 
 def plot_vaccine_second(ax):
@@ -631,20 +656,36 @@ def plot_vaccine_first(ax):
 
 def plot_event_text(ax,combo=0):
     # text event information
-    y_shift = ax.get_ylim()[1]*0.05
+    y_shift = ax.get_ylim()[1]*0.02
     ind = ~df[Event].isnull() & (df.index < (last_date + datetime.timedelta(days=-1)))
     #date = df.loc[ind,Date]
     for i in df[ind].index:
         
         if combo != 0 and mdates.date2num(i) == mdates.date2num(datetime.datetime.fromisoformat('2021-03-22')):
             bbox={'facecolor':'white', 'edgecolor':'none', 'pad':1,'alpha':0.6}
+        elif combo != 0 and mdates.date2num(i) == mdates.date2num(datetime.datetime.fromisoformat('2021-05-11')):
+            bbox={'facecolor':'white', 'edgecolor':'none', 'pad':1,'alpha':0.6}
         else:
             bbox={'facecolor':'none', 'edgecolor':'none'}
 
-        text_v = verticalizeText(df.loc[i,Event])
+        text_tmp = df.loc[i,Event]
+
+
+        if '/' in text_tmp:
+            text_sections = text_tmp.split('/')
+            if '、' in text_sections[0]:
+#                text_sections[0] = text_sections[0].replace('、',' / ',1)
+#                text_sections[0] = text_sections[0].replace('援助','')
+                text_tmp = text_sections[0]
+                for t in text_sections[1:]:
+                    text_tmp += '/' + t
+
+        text_v = verticalizeText(text_tmp)
+#        print(text_v.count('\n'))
 
         ycoord = df.loc[i,'mavg'] / population_202104*100
-        if text_v.count('\n') < 30:
+
+        if text_v.count('\n') < 40 or ycoord / ax.get_ylim()[1] < 0.30:
             if ycoord / ax.get_ylim()[1] <= 0.55 or combo == 0:
                 sign = 1
                 text = text_v + '\n$\downarrow$ '
@@ -654,14 +695,15 @@ def plot_event_text(ax,combo=0):
                 text = r'$\uparrow$ ' + '\n' + text_v
                 va = 'top'
             ax.text(i,ycoord + y_shift*sign, text, rotation=0,fontsize=event_size,
-                            horizontalalignment='center',zorder=11,va=va,bbox=bbox)
+                            horizontalalignment='center',zorder=11,va=va,bbox=bbox)            
         else:
             strings = text_v.split('/')
             
             string1 = strings[0]
-            for t in strings[1:-1]:
-                string1 += '/' + t
-            string2 = strings[-1]
+            string2 = strings[1]
+            for t in strings[2:]:
+                string2 += '/' + t
+#            string2 = strings[-1]
 
             sign = 1
             text = string1[:-1] + '\n$\downarrow$ '
@@ -679,7 +721,7 @@ def plot_event_text(ax,combo=0):
                         color='black',zorder=11,ms=6,mew=0)
 
 
-# In[168]:
+# In[310]:
 
 
 def plot_covid(ax_covid):
@@ -718,30 +760,55 @@ def plot_vaccine(ax_vaccine,combo):
 
     # plot cities
     cities = list(pop202104_cities.keys())
-    colors = ['#CA8EFF','#84C1FF','#A6A6D2','#FF8EFF','#C07AB8','#FF95CA']
+    #         1,2,3,4,5,6,7,   8,9,   10,   11,12,   13,14,15,   16,17,18,19,20,   21,22
+    shifts = [1,1,1,1,1,1,1,1.01,1, 1.00, 0.99, 1, 1.01, 1, 1, 1.01, 1, 1, 1, 1, 1.01, 1.01,]
+    xshifts = [0 for i in shifts]
+    xshifts[21] = 0
+    colors = ['#CA8EFF','#46A3FF','#A6A6D2','#FF8EFF','#C07AB8','#FF95CA','#02F78E','#00E3E3','#AAAAFF']*4
+    styles = ['-','-','--','--',':',':']*4
     colors *= 4
-    for i in range(0):
+    for i in range(22):
         city = cities[i]
         col = '校正接種人數_' + city
         col_org = '累計接種人數_' + city
-        ind = df[col].isnull()
-        df[col][ind] = df[col_org][ind]
-        city_data = df[col].interpolate()
-        ind = (df.index < datetime.datetime.fromisoformat('2021-06-10'))
+#        ind = df[col].isnull()
+#        df[col][ind] = df[col_org][ind]
+        city_data = df[col_org].interpolate(limit=1)
+        ind = (df.index < (last_date + datetime.timedelta(days=-2)))#datetime.datetime.fromisoformat('2021-06-10'))
         yy = city_data[ind]/int(pop202104_cities[city])*100
-        ax_vaccine.plot(df.index[ind], city_data[ind]/int(pop202104_cities[city])*100,'--', linewidth = 1.5,
+        ax_vaccine.plot(df.index[ind], city_data[ind]/int(pop202104_cities[city])*100,styles[i], linewidth = 1.5,
                         alpha=alpha_city_vaccine,label='none',zorder=2,color=colors[i])#color_city_vaccine)
-        xx = mdates.date2num(df.index[ind][-1] + datetime.timedelta(hours=6))
-        msg = city[:-1] + '(%.2f'%yy[-1] + '%)'
-        ax_vaccine.text(xx,yy[-1],msg,ha='left',va='center',
-                        zorder=2,color=color_city_marker)
-        ax_vaccine.plot(df.index[ind][-1],yy[-1],'o',mew=0,ms=5,
+    for i in range(21,-1,-1):
+        city = cities[i]
+        col_org = '累計接種人數_' + city
+        city_data = df[col_org].interpolate()
+        ind = (df.index < (last_date + datetime.timedelta(days=-2)))
+        yy = city_data[ind]/int(pop202104_cities[city])*100
+    
+        xx = mdates.date2num(df.index[ind][-1-xshifts[i]] + datetime.timedelta(hours=9))
+        if city == '新竹市':
+            c = '竹市'
+        elif city == '新竹縣':
+            c = '竹縣'
+        elif city == '嘉義市':
+            c = '嘉市'
+        elif city == '嘉義縣':
+            c = '嘉縣'
+        else:
+            c = city[:-1]
+        msg = c + '%.2f'%yy[-1] + '%'
+        yy[-1] = min(yy[-1],ax_vaccine.get_ylim()[1] * vac_ylim_times*.98)
+        ax_vaccine.text(xx,yy[-1]*shifts[i],msg,ha='left',va='center',
+                        zorder=20,color=colors[i],fontsize=6,bbox={'facecolor':'white', 'edgecolor':'none','alpha':0.3,'pad':0})
+        if i == 21:
+            yy[-1] = yy[-1] * shifts[i]
+        ax_vaccine.plot(df.index[ind][-1-xshifts[i]],yy[-1],'o',mew=0,ms=5,
                         zorder=2,mfc=color_city_marker)
 
     ax_vaccine.set_yticks(np.arange(0, ax_vaccine.get_ylim()[1]+.1, vacc_y_interval))
     ax_vaccine.set_yticks(np.arange(0, ax_vaccine.get_ylim()[1]+.1, vacc_y_interval_minor), minor=True)
     #ax_progress.set_zorder(0)
-    ax_vaccine.set_ylim(0,)#math.ceil(ax_vaccine.get_ylim()[1] * vac_ylim_times))
+    ax_vaccine.set_ylim(0, ax_vaccine.get_ylim()[1] * vac_ylim_times)
     ax_vaccine.set_xlim(first_date,xmax)
     ax_vaccine.set_ylabel(verticalizeText(label_left), fontsize=label_size,va='center',rotation=0)
     ax_vaccine.yaxis.set_label_coords(1.03,0.5)
@@ -810,7 +877,7 @@ def plot_main(ax_covid,combo=0):
     ax_vaccine.add_artist(legend_background)
 
 
-# In[169]:
+# In[311]:
 
 
 fig, ax_covid = plt.subplots(1,1,figsize=figsize,dpi=dpi)
@@ -823,7 +890,7 @@ plot_sub(ax_vac_num,combo=1)
 
 # plot class
 class_size = [0.24, 0.24]
-ax_class = fig.add_axes([0.18, 0.6, class_size[0], class_size[1]],polar=True)
+ax_class = fig.add_axes([0.16, 0.6, class_size[0], class_size[1]],polar=True)
 plot_class(ax_class,combo=1)
 
 # save figure
@@ -839,7 +906,7 @@ plt.close()
 # https://www.twblogs.net/a/5ee7eacdb4042e940f40f7c3
 
 
-# In[170]:
+# In[305]:
 
 
 fig, ax = plt.subplots(1,1,figsize=figsize,dpi=dpi)
@@ -852,7 +919,7 @@ plt.show()
 plt.close()
 
 
-# In[171]:
+# In[306]:
 
 
 sub_figsize = tuple(np.array(figsize) * np.array(sub_size) * 1.2)
@@ -865,7 +932,7 @@ plt.show()
 plt.close()
 
 
-# In[182]:
+# In[307]:
 
 
 class_figsize = tuple(np.array(figsize) * np.array(class_size) * 1.2)
@@ -878,7 +945,7 @@ plt.show()
 plt.close()
 
 
-# In[173]:
+# In[14]:
 
 
 size_event = [1., 1.]
@@ -895,7 +962,7 @@ plt.show()
 plt.close()
 
 
-# In[174]:
+# In[15]:
 
 
 # convert to .py
@@ -915,7 +982,7 @@ get_ipython().system('jupyter nbconvert --to script plotVaccineCOVID19Taiwan.ipy
 # 下載方法 [POST method]
 # curl -k -d '{"CK":"covid-19@nchc.org.tw", "querydata":"2001"}' -H "Content-Type: application/json" -X POST https://covid-19.nchc.org.tw/api/covid19
 
-# In[175]:
+# In[16]:
 
 
 dict_info = {"id":"ID","a01":"日期","a02":"縣市別","a03":"(A) 總人口數","a04":"新增接種人次","a05":"(B) 累計接種人次","a06":"(B\/A) 疫苗覆蓋率 (%)",
@@ -929,7 +996,7 @@ import os, json
 result = os.popen(cmd).read()
 
 
-# In[176]:
+# In[17]:
 
 
 data = json.loads(result)
